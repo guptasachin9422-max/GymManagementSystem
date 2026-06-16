@@ -1,0 +1,23 @@
+$kind: http-request
+url: http://localhost:8080/members
+method: GET
+body:
+  type: json
+  content: "{\r
+
+    \  \"name\": \"Aadya\",\r
+
+    \  \"age\": 20,\r
+
+    \  \"phone\": \"9876543210\",\r
+
+    \  \"membershipType\": \"Premium\",\r
+
+    \  \"user\": {\r
+
+    \    \"id\": 40\r
+
+    \  }\r
+
+    }"
+order: 2154788653371175

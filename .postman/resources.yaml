@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 337d6748-952c-4002-8b9e-5a4b90b1e6e6
+
+localResources:
+  specs:
+    - ..\postman\specs\New Specification\New Specification.yaml

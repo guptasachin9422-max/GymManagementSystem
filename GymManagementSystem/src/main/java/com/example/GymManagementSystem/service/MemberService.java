@@ -13,6 +13,9 @@ public class MemberService {
     @Autowired
     private MemberRepository memberRepository;
 
+    public Member getMyProfile(Integer userId) {
+        return memberRepository.findByUserId(userId);
+    }
 
     public Member saveMember(Member member) {
         return memberRepository.save(member);
