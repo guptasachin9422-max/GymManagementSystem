@@ -62,9 +62,17 @@ public class Member {
     }
 
     public void setMembershipType(String membershipType) {
-        this.membershipType = membershipType;
-    }
 
+        if (membershipType.equalsIgnoreCase("Basic") ||
+                membershipType.equalsIgnoreCase("Regular") ||
+                membershipType.equalsIgnoreCase("Premium")) {
+
+            this.membershipType = membershipType;
+        } else {
+            throw new RuntimeException(
+                    "Invalid Membership Type. Use Basic, Regular or Premium");
+        }
+    }
     public User getUser() {
         return user;
     }
