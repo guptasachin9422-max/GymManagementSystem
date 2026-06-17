@@ -5,7 +5,9 @@ import com.example.GymManagementSystem.repository.TrainerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TrainerService {
@@ -17,8 +19,19 @@ public class TrainerService {
         return trainerRepository.save(trainer);
     }
 
-    public List<Trainer> getAllTrainers() {
-        return trainerRepository.findAll();
+    public List<Map<String, Object>> getAllTrainers() {
+        return trainerRepository.findAll()
+                .stream()
+                .map(trainer -> {
+                    Map<String, Object> trainerResponse = new HashMap<>();
+                    trainerResponse.put("trainerId", trainer.getTrainerId());
+                    trainerResponse.put("name", trainer.getName());
+                    trainerResponse.put("specialty", trainer.getSpecialty());
+                    trainerResponse.put("phone", trainer.getPhone());
+                    trainerResponse.put("user", trainer.getUser());
+                    return trainerResponse;
+                })
+                .toList();
     }
 
     public Trainer getTrainerById(Long id) {

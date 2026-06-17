@@ -22,6 +22,7 @@ public class Trainer {
     private User user;
 
     @OneToMany(mappedBy = "trainer")
+    @JsonManagedReference
     private List<Member> members;
 
     public Trainer() {
