@@ -1,5 +1,6 @@
 package com.example.GymManagementSystem.service;
 
+import com.example.GymManagementSystem.entity.Trainer;
 import com.example.GymManagementSystem.entity.User;
 import com.example.GymManagementSystem.repository.TrainerRepository;
 import com.example.GymManagementSystem.repository.UserRepository;
@@ -37,17 +38,25 @@ public class UserService {
         if (!dbUser.getPassword().equals(user.getPassword())) {
             return "Wrong Password";
         }
-        if(dbUser.getRole().equals("OWNER")){
-
-            Map<String,Object>response = new HashMap<>();
-            response.put("message","Owner Login Successfull");
-            response.put("members",memberRepository.findAll());
-            response.put("trainers",trainerRepository.findAll());
+        if (dbUser.getRole().equals("OWNER")) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Owner Login Successful");
+            response.put("members", memberRepository.findAll());
+            response.put("trainers", trainerRepository.findAll());
             return response;
         }
 
-        Member member =
-                memberRepository.findByUserId(dbUser.getId());
+        if (dbUser.getRole().equals("Trainer")) {
+            Trainer trainer = trainerRepository.findByUserId(dbUser.getId());
+
+            if (trainer == null) {
+                return "Trainer Profile Not Found";
+            }
+
+            return trainer;
+        }
+
+        Member member = memberRepository.findByUserId(dbUser.getId());
 
         if (member == null) {
             return "Login Successful. Please create your Member Profile.";

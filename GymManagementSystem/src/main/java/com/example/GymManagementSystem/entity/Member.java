@@ -1,4 +1,5 @@
 package com.example.GymManagementSystem.entity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.*;
 
@@ -20,6 +21,7 @@ public class Member {
 
     @ManyToOne
     @JoinColumn(name = "trainer_id")
+    @JsonBackReference
     private Trainer trainer;
 
     public Member() {
