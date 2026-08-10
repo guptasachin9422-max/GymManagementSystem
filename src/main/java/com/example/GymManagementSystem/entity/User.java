@@ -58,4 +58,14 @@ public class User {
     public void setRole(String role) {
         this.role = role;
     }
+    @Column(name = "access_token", length = 1000)
+private String accessToken;
+
+public String getAccessToken() {
+    return accessToken;
+}
+
+public void setAccessToken(String accessToken) {
+    this.accessToken = accessToken;
+}
 }

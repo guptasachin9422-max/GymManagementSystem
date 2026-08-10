@@ -77,6 +77,10 @@ private LogoutService logoutService;
     String token =
             jwtService.generateToken(dbUser.getUsername());
 
+            dbUser.setAccessToken(token);
+userRepository.save(dbUser);
+
+
     Map<String, Object> response =
             new HashMap<>();
 
@@ -145,5 +149,6 @@ private LogoutService logoutService;
 
         return "User Deleted Successfully";
     }
+    
 
 }
