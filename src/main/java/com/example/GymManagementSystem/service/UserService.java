@@ -12,6 +12,8 @@ import java.util.Map;
 
 @Service
 public class UserService {
+    @Autowired
+private LogoutService logoutService;
 
     @Autowired
     private UserRepository userRepository;
@@ -89,35 +91,34 @@ public class UserService {
     // ===========================
     // Authenticate Token
     // ===========================
-    public User authenticate(String authHeader) {
+   public User authenticate(String authHeader) {
 
-        if (authHeader == null ||
-                !authHeader.startsWith("Bearer ")) {
-            return null;
-        }
-
-        String token =
-                authHeader.substring(7);
-
-        String username =
-                jwtService.extractUsername(token);
-
-        User user =
-                userRepository.findByUsername(username);
-
-        if (user == null) {
-            return null;
-        }
-
-        if (!jwtService.validateToken(
-                token,
-                username)) {
-
-            return null;
-        }
-
-        return user;
+    if (authHeader == null ||
+            !authHeader.startsWith("Bearer ")) {
+        return null;
     }
+
+    String token = authHeader.substring(7);
+
+    // Check blacklisted token
+    if (logoutService.isTokenBlacklisted(token)) {
+        return null;
+    }
+
+    String username = jwtService.extractUsername(token);
+
+    User user = userRepository.findByUsername(username);
+
+    if (user == null) {
+        return null;
+    }
+
+    if (!jwtService.validateToken(token, username)) {
+        return null;
+    }
+
+    return user;
+}
 
     // ===========================
     // Get All Users
