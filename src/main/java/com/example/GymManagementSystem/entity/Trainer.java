@@ -1,8 +1,9 @@
 package com.example.GymManagementSystem.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -11,6 +12,7 @@ public class Trainer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty("id")
     private Long trainerId;
 
     private String name;
@@ -19,11 +21,12 @@ public class Trainer {
 
     @OneToOne
     @JoinColumn(name = "user_id")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private User user;
 
-    @OneToMany(mappedBy = "trainer")
-    @JsonManagedReference
-    private List<Member> members;
+    @OneToMany(mappedBy = "trainer", orphanRemoval = true)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private List<Member> members = new ArrayList<>();
 
     public Trainer() {
     }

@@ -23,6 +23,17 @@ private MemberRepository memberRepository;
 
     // Add Payment
     public Payment savePayment(Payment payment) {
+        
+        // Fetch member from database if member ID is provided
+        if (payment.getMember() != null && payment.getMember().getId() != null) {
+            Member member = memberRepository.findById(payment.getMember().getId()).orElse(null);
+            payment.setMember(member);
+        }
+        
+        if (payment.getMember() == null) {
+            throw new IllegalArgumentException("Member not found");
+        }
+        
         Payment savedPayment = paymentRepository.save(payment);
         
         // Send payment success email if payment status is successful

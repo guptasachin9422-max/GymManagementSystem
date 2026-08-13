@@ -1,6 +1,9 @@
 package com.example.GymManagementSystem.entity;
+import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import java.util.ArrayList;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity
@@ -18,14 +21,22 @@ public class Member {
     private String membershipStartDate;
     private String membershipEndDate;
 
-    @OneToOne
+    @OneToOne(orphanRemoval = true)
     @JoinColumn(name = "user_id")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "trainer_id")
-    @JsonBackReference
+    @JoinColumn(name = "trainer_id", nullable = true)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Trainer trainer;
+
+    @OneToMany(
+        mappedBy = "member",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private List<Payment> payments = new ArrayList<>();
 
     public Member() {
     }

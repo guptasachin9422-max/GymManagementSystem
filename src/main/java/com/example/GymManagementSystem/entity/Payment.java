@@ -1,5 +1,7 @@
 package com.example.GymManagementSystem.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -19,7 +21,8 @@ public class Payment {
     private String paymentStatus;
 
     @ManyToOne
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "member_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Member member;
 
     public Payment() {

@@ -1,7 +1,11 @@
 package com.example.GymManagementSystem.service;
 
 import com.example.GymManagementSystem.entity.Member;
+import com.example.GymManagementSystem.entity.Trainer;
+import com.example.GymManagementSystem.entity.User;
 import com.example.GymManagementSystem.repository.MemberRepository;
+import com.example.GymManagementSystem.repository.TrainerRepository;
+import com.example.GymManagementSystem.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +16,12 @@ public class MemberService {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private TrainerRepository trainerRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public List<Member> getAllMembers() {
         return memberRepository.findAll();
@@ -36,8 +46,21 @@ public class MemberService {
         existingMember.setMembershipStartDate(member.getMembershipStartDate());
         existingMember.setMembershipEndDate(member.getMembershipEndDate());
 
-        existingMember.setTrainer(member.getTrainer());
-        existingMember.setUser(member.getUser());
+        // Fetch trainer from database if provided
+        if (member.getTrainer() != null && member.getTrainer().getTrainerId() != null) {
+            Trainer trainer = trainerRepository.findById(member.getTrainer().getTrainerId()).orElse(null);
+            existingMember.setTrainer(trainer);
+        } else {
+            existingMember.setTrainer(null);
+        }
+
+        // Fetch user from database if provided
+        if (member.getUser() != null && member.getUser().getId() != null) {
+            User user = userRepository.findById(member.getUser().getId()).orElse(null);
+            existingMember.setUser(user);
+        } else {
+            existingMember.setUser(null);
+        }
 
         return memberRepository.save(existingMember);
     }
@@ -46,12 +69,16 @@ public class MemberService {
 }
 public Member saveMember(Member member) {
 
-    if (member.getUser() != null) {
-        System.out.println("User ID: " + member.getUser().getId());
+    // Fetch trainer from database if trainer ID is provided
+    if (member.getTrainer() != null && member.getTrainer().getTrainerId() != null) {
+        Trainer trainer = trainerRepository.findById(member.getTrainer().getTrainerId()).orElse(null);
+        member.setTrainer(trainer);
     }
 
-    if (member.getTrainer() != null) {
-        System.out.println("Trainer ID: " + member.getTrainer().getTrainerId());
+    // Fetch user from database if user ID is provided
+    if (member.getUser() != null && member.getUser().getId() != null) {
+        User user = userRepository.findById(member.getUser().getId()).orElse(null);
+        member.setUser(user);
     }
 
     return memberRepository.save(member);
