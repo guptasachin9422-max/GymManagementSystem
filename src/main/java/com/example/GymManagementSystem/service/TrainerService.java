@@ -4,6 +4,8 @@ import com.example.GymManagementSystem.entity.Trainer;
 import com.example.GymManagementSystem.repository.TrainerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.example.GymManagementSystem.entity.Member;
 
 import java.util.List;
 
@@ -48,13 +50,24 @@ public class TrainerService {
     }
 
     // Delete Trainer
-    public String deleteTrainer(Long id) {
+  @Transactional
+public String deleteTrainer(Long trainerId) {
 
-        trainerRepository.deleteById(id);
+    Trainer trainer = trainerRepository.findById(trainerId).orElse(null);
 
-        return "Trainer Deleted Successfully";
+    if (trainer == null) {
+        return "Trainer Not Found";
     }
-    public Trainer getTrainerByUserId(Integer userId) {
-    return trainerRepository.findByUserId(userId);
+
+    // Trainer ke saare members ko detach karo
+    for (Member member : trainer.getMembers()) {
+        member.setTrainer(null);
+        memberRepository.save(member);
+    }
+
+    // Ab trainer delete karo
+    trainerRepository.delete(trainer);
+
+    return "Trainer Deleted Successfully";
 }
 }

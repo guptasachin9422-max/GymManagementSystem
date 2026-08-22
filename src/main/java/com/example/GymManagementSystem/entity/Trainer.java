@@ -23,11 +23,12 @@ public class Trainer {
     @JoinColumn(name = "user_id")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private User user;
+    
 
-    @OneToMany(mappedBy = "trainer", orphanRemoval = true)
+    @OneToMany(mappedBy = "trainer")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private List<Member> members = new ArrayList<>();
-
+    
     public Trainer() {
     }
 
