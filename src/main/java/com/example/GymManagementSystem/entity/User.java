@@ -3,7 +3,7 @@ package com.example.GymManagementSystem.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name="users")
+@Table(name = "users")
 public class User {
 
     @Id
@@ -15,17 +15,31 @@ public class User {
     private String password;
 
     private String role;
+    
+    private String activeSessionToken;
+
     @Column(unique = true, nullable = false)
     private String email;
-    public String getEmail() {
-    return email;
-}
 
-    public void setEmail(String email) {
-        this.email = email;
+    // ===========================
+    // Active Login Token
+    // ===========================
+
+    @Column(name = "access_token", length = 1000)
+    private String accessToken;
+
+
+    // ===========================
+    // Constructor
+    // ===========================
+
+    public User() {
     }
 
-    public User(){}
+
+    // ===========================
+    // Getters & Setters
+    // ===========================
 
     public Integer getId() {
         return id;
@@ -35,6 +49,7 @@ public class User {
         this.id = id;
     }
 
+
     public String getUsername() {
         return username;
     }
@@ -42,6 +57,7 @@ public class User {
     public void setUsername(String username) {
         this.username = username;
     }
+
 
     public String getPassword() {
         return password;
@@ -51,6 +67,7 @@ public class User {
         this.password = password;
     }
 
+
     public String getRole() {
         return role;
     }
@@ -58,14 +75,22 @@ public class User {
     public void setRole(String role) {
         this.role = role;
     }
-    @Column(name = "access_token", length = 1000)
-private String accessToken;
 
-public String getAccessToken() {
-    return accessToken;
-}
 
-public void setAccessToken(String accessToken) {
-    this.accessToken = accessToken;
-}
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
 }

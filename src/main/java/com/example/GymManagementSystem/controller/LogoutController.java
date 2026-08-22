@@ -1,50 +1,47 @@
 package com.example.GymManagementSystem.controller;
 
+import com.example.GymManagementSystem.entity.User;
 import com.example.GymManagementSystem.service.LogoutService;
 import com.example.GymManagementSystem.service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/user")
 public class LogoutController {
-
-    @Autowired
-    private LogoutService logoutService;
 
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private LogoutService logoutService;
+
+
+    // ===========================
+    // Logout
+    // ===========================
+
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(
+    public Object logout(
             @RequestHeader("Authorization") String authHeader) {
 
-        if (authHeader == null ||
-                !authHeader.startsWith("Bearer ")) {
+        // Authenticate user
+        User user = userService.authenticate(authHeader);
 
-            return ResponseEntity.badRequest()
-                    .body("Authorization token required");
+        if (user == null) {
+            return "Invalid Token";
         }
 
-        String token = authHeader.substring(7);
+        // Extract token
+        String token = authHeader.substring(7).trim();
 
-        // Check whether token belongs to a valid user
-        if (userService.authenticate(authHeader) == null) {
+        // Blacklist old token
+        logoutService.blacklistToken(token);
 
-            return ResponseEntity.status(401)
-                    .body("Invalid Token");
-        }
+        // Remove active token from database
+        logoutService.logoutUser(user);
 
-        logoutService.logout(token);
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "message",
-                        "Logout Successful"
-                )
-        );
+        return "Logout Successful";
     }
 }
