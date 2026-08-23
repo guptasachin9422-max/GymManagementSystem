@@ -30,7 +30,6 @@ public class UserService {
     // ===========================
     // Register
     // ===========================
-
     public ResponseEntity<?> register(User user) {
 
         User existingUsername =
@@ -56,7 +55,7 @@ public class UserService {
         } catch (Exception e) {
             System.err.println(
                     "Failed to send welcome email: "
-                    + e.getMessage()
+                            + e.getMessage()
             );
         }
 
@@ -67,12 +66,10 @@ public class UserService {
     // ===========================
     // Login
     // ===========================
-
     public ResponseEntity<?> login(User user) {
 
-        User dbUser =
-                userRepository.findByEmail(user.getEmail())
-                        .orElse(null);
+        User dbUser = userRepository.findByEmail(user.getEmail())
+                .orElse(null);
 
         if (dbUser == null) {
             return ResponseEntity.badRequest()
@@ -84,54 +81,11 @@ public class UserService {
                     .body("Wrong Password");
         }
 
+        // Generate JWT Token
+        String token = jwtService.generateToken(dbUser.getUsername());
 
-        // ==========================================
-        // CHECK EXISTING LOGIN
-        // ==========================================
-
-        String existingToken = dbUser.getAccessToken();
-
-        if (existingToken != null &&
-                !existingToken.trim().isEmpty()) {
-
-            // Check if old token is still valid
-            if (jwtService.validateToken(
-                    existingToken,
-                    dbUser.getUsername())) {
-
-                return ResponseEntity.status(409)
-                        .body(
-                            "Account is already logged in on another device. " +
-                            "Please logout from the other device first."
-                        );
-            }
-
-            // Old token expired
-            dbUser.setAccessToken(null);
-            userRepository.save(dbUser);
-        }
-
-
-        // ==========================================
-        // CREATE NEW TOKEN
-        // ==========================================
-
-        String token =
-                jwtService.generateToken(
-                        dbUser.getUsername()
-                );
-
-        dbUser.setAccessToken(token);
-
-        userRepository.save(dbUser);
-
-
-        // ==========================================
-        // RESPONSE
-        // ==========================================
-
-        Map<String, Object> response =
-                new HashMap<>();
+        // Response
+        Map<String, Object> response = new HashMap<>();
 
         response.put("message", "Login Successful");
         response.put("token", token);
@@ -146,69 +100,49 @@ public class UserService {
     // ===========================
     // Authenticate Token
     // ===========================
-
     public User authenticate(String authHeader) {
 
         if (authHeader == null ||
                 !authHeader.startsWith("Bearer ")) {
-
             return null;
         }
 
-        String token =
-                authHeader.substring(7).trim();
+        String token = authHeader.substring(7).trim();
 
-
-        // Check blacklist
+        // Check if token is logged out / blacklisted
         if (logoutService.isTokenBlacklisted(token)) {
             return null;
         }
 
+        try {
+            String username = jwtService.extractUsername(token);
 
-        String username =
-                jwtService.extractUsername(token);
+            if (username == null) {
+                return null;
+            }
 
-        if (username == null) {
+            User user = userRepository.findByUsername(username);
+
+            if (user == null) {
+                return null;
+            }
+
+            // Validate JWT token only
+            if (!jwtService.validateToken(token, username)) {
+                return null;
+            }
+
+            return user;
+
+        } catch (Exception e) {
             return null;
         }
-
-
-        User user =
-                userRepository.findByUsername(username);
-
-        if (user == null) {
-            return null;
-        }
-
-
-        // ==========================================
-        // IMPORTANT:
-        // TOKEN MUST MATCH CURRENT DB TOKEN
-        // ==========================================
-
-        if (user.getAccessToken() == null ||
-                !user.getAccessToken().equals(token)) {
-
-            return null;
-        }
-
-
-        // ==========================================
-        // VALIDATE JWT
-        // ==========================================
-
-        if (!jwtService.validateToken(token, username)) {
-            return null;
-        }
-
-        return user;
     }
 
 
     // ===========================
     // Get All Users
     // ===========================
-
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
@@ -217,9 +151,7 @@ public class UserService {
     // ===========================
     // Get User By Id
     // ===========================
-
     public User getUserById(Integer id) {
-
         return userRepository.findById(id)
                 .orElse(null);
     }
@@ -228,11 +160,8 @@ public class UserService {
     // ===========================
     // Delete User
     // ===========================
-
     public String deleteUser(Integer id) {
-
         userRepository.deleteById(id);
-
         return "User Deleted Successfully";
     }
 }

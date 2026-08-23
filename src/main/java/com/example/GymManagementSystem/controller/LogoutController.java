@@ -21,7 +21,6 @@ public class LogoutController {
     // ===========================
     // Logout
     // ===========================
-
     @PostMapping("/logout")
     public Object logout(
             @RequestHeader("Authorization") String authHeader) {
@@ -36,11 +35,8 @@ public class LogoutController {
         // Extract token
         String token = authHeader.substring(7).trim();
 
-        // Blacklist old token
+        // Blacklist token
         logoutService.blacklistToken(token);
-
-        // Remove active token from database
-        logoutService.logoutUser(user);
 
         return "Logout Successful";
     }

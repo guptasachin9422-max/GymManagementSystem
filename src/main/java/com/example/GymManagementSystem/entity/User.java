@@ -15,31 +15,15 @@ public class User {
     private String password;
 
     private String role;
-    
-    private String activeSessionToken;
 
     @Column(unique = true, nullable = false)
     private String email;
 
-    // ===========================
-    // Active Login Token
-    // ===========================
 
-    @Column(name = "access_token", length = 1000)
-    private String accessToken;
-
-
-    // ===========================
     // Constructor
-    // ===========================
-
     public User() {
     }
 
-
-    // ===========================
-    // Getters & Setters
-    // ===========================
 
     public Integer getId() {
         return id;
@@ -83,14 +67,5 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
     }
 }
