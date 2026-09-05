@@ -2,6 +2,7 @@ package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.Member;
 import com.example.GymManagementSystem.entity.User;
+import com.example.GymManagementSystem.dto.MemberProfileResponse;
 import com.example.GymManagementSystem.service.MemberService;
 import com.example.GymManagementSystem.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +60,7 @@ public class MemberController {
     // ==========================
     // Get Member By Id
     // ==========================
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public Object getMemberById(
             @PathVariable Integer id,
             @RequestHeader("Authorization") String authHeader) {
@@ -73,10 +74,23 @@ public class MemberController {
         return memberService.getMemberById(id);
     }
 
+    @GetMapping("/my-members")
+    public Object myMembers(
+            @RequestHeader("Authorization") String authHeader) {
+        User user = userService.authenticate(authHeader);
+        if (user == null) {
+            return "Invalid Token";
+        }
+        if (!user.getRole().equalsIgnoreCase("TRAINER")) {
+            return "Access Denied";
+        }
+        return memberService.getMyTrainerMembers(user.getId());
+    }
+
     // ==========================
     // Update Member
     // ==========================
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     public Object updateMember(
             @PathVariable Integer id,
             @RequestBody Member member,
@@ -98,7 +112,7 @@ public class MemberController {
     // ==========================
     // Delete Member
     // ==========================
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public Object deleteMember(
             @PathVariable Integer id,
             @RequestHeader("Authorization") String authHeader) {
@@ -129,6 +143,7 @@ public class MemberController {
             return "Invalid Token";
         }
 
-        return memberService.getMyProfile(user.getId());
+        MemberProfileResponse profile = memberService.getMyProfileResponse(user.getId());
+        return profile;
     }
 }

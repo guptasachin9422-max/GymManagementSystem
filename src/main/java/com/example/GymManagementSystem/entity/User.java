@@ -1,6 +1,7 @@
 package com.example.GymManagementSystem.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "users")
@@ -15,6 +16,24 @@ public class User {
     private String password;
 
     private String role;
+
+    private String displayName;
+
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String trainerName;
+
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String trainerSpecialty;
+
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String trainerPhone;
+
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private Integer trainerAge;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -67,5 +86,45 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getTrainerName() {
+        return trainerName;
+    }
+
+    public void setTrainerName(String trainerName) {
+        this.trainerName = trainerName;
+    }
+
+    public String getTrainerSpecialty() {
+        return trainerSpecialty;
+    }
+
+    public void setTrainerSpecialty(String trainerSpecialty) {
+        this.trainerSpecialty = trainerSpecialty;
+    }
+
+    public String getTrainerPhone() {
+        return trainerPhone;
+    }
+
+    public void setTrainerPhone(String trainerPhone) {
+        this.trainerPhone = trainerPhone;
+    }
+
+    public Integer getTrainerAge() {
+        return trainerAge;
+    }
+
+    public void setTrainerAge(Integer trainerAge) {
+        this.trainerAge = trainerAge;
     }
 }

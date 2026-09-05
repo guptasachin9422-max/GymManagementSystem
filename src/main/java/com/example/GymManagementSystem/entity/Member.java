@@ -21,7 +21,7 @@ public class Member {
     private String membershipStartDate;
     private String membershipEndDate;
 
-    @OneToOne(orphanRemoval = true)
+    @OneToOne
     @JoinColumn(name = "user_id")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private User user;
@@ -95,6 +95,16 @@ public class Member {
 
     public void setTrainer(Trainer trainer) {
         this.trainer = trainer;
+    }
+
+    @JsonProperty("trainerId")
+    public Long getTrainerId() {
+        return trainer == null ? null : trainer.getTrainerId();
+    }
+
+    @JsonProperty("trainerName")
+    public String getTrainerName() {
+        return trainer == null ? null : trainer.getName();
     }
 
     public String getMembershipStartDate() {

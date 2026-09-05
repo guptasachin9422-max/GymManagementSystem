@@ -1,5 +1,6 @@
 package com.example.GymManagementSystem.entity;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
@@ -13,11 +14,13 @@ public class Trainer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonProperty("id")
+    @JsonAlias("trainerId")
     private Long trainerId;
 
     private String name;
     private String specialty;
     private String phone;
+    private Integer age;
 
     @OneToOne
     @JoinColumn(name = "user_id")
@@ -64,12 +67,30 @@ public class Trainer {
         this.phone = phone;
     }
 
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
     public User getUser() {
         return user;
     }
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    @JsonProperty("userId")
+    public Integer getUserId() {
+        return user == null ? null : user.getId();
+    }
+
+    @JsonProperty("userEmail")
+    public String getUserEmail() {
+        return user == null ? null : user.getEmail();
     }
 
     public List<Member> getMembers() {

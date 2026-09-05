@@ -1,6 +1,8 @@
 package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.User;
+import com.example.GymManagementSystem.dto.UpdateDisplayNameRequest;
+import com.example.GymManagementSystem.dto.UserManagementResponse;
 import com.example.GymManagementSystem.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -39,9 +41,16 @@ public class UserController {
     // Get All Users
     // ==========================
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserManagementResponse> getAllUsers() {
 
         return userService.getAllUsers();
+    }
+
+    @PutMapping("/{id}/display-name")
+    public UserManagementResponse updateDisplayName(
+            @PathVariable Integer id,
+            @RequestBody UpdateDisplayNameRequest request) {
+        return userService.updateDisplayName(id, request.getDisplayName());
     }
 
     // ==========================

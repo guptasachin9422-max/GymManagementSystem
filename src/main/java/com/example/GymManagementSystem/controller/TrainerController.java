@@ -2,6 +2,9 @@ package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.Trainer;
 import com.example.GymManagementSystem.entity.User;
+import com.example.GymManagementSystem.dto.TrainerResponse;
+import com.example.GymManagementSystem.dto.TrainerUpdateRequest;
+import com.example.GymManagementSystem.dto.TrainerProfileResponse;
 import com.example.GymManagementSystem.service.TrainerService;
 import com.example.GymManagementSystem.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +60,7 @@ public class TrainerController {
     // ==========================
     // Get Trainer By Id
     // ==========================
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public Object getTrainerById(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
@@ -74,10 +77,10 @@ public class TrainerController {
     // ==========================
     // Update Trainer
     // ==========================
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     public Object updateTrainer(
             @PathVariable Long id,
-            @RequestBody Trainer trainer,
+            @RequestBody TrainerUpdateRequest request,
             @RequestHeader("Authorization") String authHeader) {
 
         User user = userService.authenticate(authHeader);
@@ -90,13 +93,13 @@ public class TrainerController {
             return "Access Denied";
         }
 
-        return trainerService.updateTrainer(id, trainer);
+        return trainerService.updateTrainer(id, request);
     }
 
     // ==========================
     // Delete Trainer
     // ==========================
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public Object deleteTrainer(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
@@ -132,5 +135,21 @@ public class TrainerController {
         }
 
         return trainerService.getTrainerByUserId(user.getId());
+    }
+
+    @PutMapping("/my-profile")
+    public Object updateMyProfile(
+            @RequestBody TrainerUpdateRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+
+        User user = userService.authenticate(authHeader);
+        if (user == null) {
+            return "Invalid Token";
+        }
+        if (!user.getRole().equalsIgnoreCase("TRAINER")) {
+            return "Access Denied";
+        }
+
+        return trainerService.updateMyProfile(user.getId(), request);
     }
 }

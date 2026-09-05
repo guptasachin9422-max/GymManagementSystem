@@ -6,6 +6,7 @@ import com.example.GymManagementSystem.service.PaymentService;
 import com.example.GymManagementSystem.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/payments")
@@ -114,4 +115,5 @@ public class PaymentController {
 
         return paymentService.getPaymentByUserId(user.getId());
     }
+
 }

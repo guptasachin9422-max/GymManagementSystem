@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import com.example.GymManagementSystem.repository.MemberRepository;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class PaymentService {
@@ -37,8 +36,9 @@ private MemberRepository memberRepository;
         Payment savedPayment = paymentRepository.save(payment);
         
         // Send payment success email if payment status is successful
-        if ("Completed".equalsIgnoreCase(payment.getPaymentStatus()) || 
-            "Success".equalsIgnoreCase(payment.getPaymentStatus())) {
+        if ("Completed".equalsIgnoreCase(payment.getPaymentStatus()) ||
+            "Success".equalsIgnoreCase(payment.getPaymentStatus()) ||
+            "Paid".equalsIgnoreCase(payment.getPaymentStatus())) {
             sendPaymentSuccessEmail(savedPayment);
         }
         
