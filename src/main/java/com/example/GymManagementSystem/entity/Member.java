@@ -107,6 +107,16 @@ public class Member {
         return trainer == null ? null : trainer.getName();
     }
 
+    @JsonProperty("membershipDurationMonths")
+    public Integer getMembershipDurationMonths() {
+        return membershipType == null ? null : MembershipPlan.from(membershipType).getDurationMonths();
+    }
+
+    @JsonProperty("membershipPrice")
+    public Double getMembershipPrice() {
+        return membershipType == null ? null : MembershipPlan.from(membershipType).getPrice();
+    }
+
     public String getMembershipStartDate() {
         return membershipStartDate;
     }

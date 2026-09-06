@@ -5,7 +5,9 @@ import com.example.GymManagementSystem.entity.Payment;
 import com.example.GymManagementSystem.entity.Trainer;
 import com.example.GymManagementSystem.entity.User;
 import com.example.GymManagementSystem.dto.MemberProfileResponse;
+import com.example.GymManagementSystem.dto.MembershipPlanResponse;
 import com.example.GymManagementSystem.dto.TrainerMemberResponse;
+import com.example.GymManagementSystem.entity.MembershipPlan;
 import com.example.GymManagementSystem.repository.MemberRepository;
 import com.example.GymManagementSystem.repository.PaymentRepository;
 import com.example.GymManagementSystem.repository.TrainerRepository;
@@ -13,11 +15,14 @@ import com.example.GymManagementSystem.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
-import java.util.List;
 import java.util.Optional;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MemberService {
@@ -34,9 +39,41 @@ public class MemberService {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
+
     // Get All Members
     public List<Member> getAllMembers() {
-        return memberRepository.findAll();
+        List<Member> members = memberRepository.findAll();
+        members.forEach(member -> {
+            try {
+                normalizeMembership(member);
+                synchronizePendingPayment(member);
+            } catch (IllegalArgumentException ignored) {
+                // Keep incomplete historical records visible without allowing
+                // them to block the owner member list.
+            }
+        });
+        memberRepository.saveAll(members);
+        return members;
+    }
+
+    /**
+     * Normalize legacy Basic/Premium/VIP rows the first time the service starts.
+     * Existing member and payment records are retained; only the plan value,
+     * calculated end date, and unpaid amount are synchronized.
+     */
+    @PostConstruct
+    public void migrateLegacyMemberships() {
+        memberRepository.findAll().forEach(member -> {
+            try {
+                normalizeMembership(member);
+                memberRepository.save(member);
+                synchronizePendingPayment(member);
+            } catch (IllegalArgumentException ignored) {
+                // Do not prevent the application from starting because of one
+                // incomplete historical record.
+            }
+        });
     }
 
 
@@ -49,6 +86,8 @@ public class MemberService {
     // Add Member
     @org.springframework.transaction.annotation.Transactional
     public Member saveMember(Member member) {
+
+        normalizeMembership(member);
 
         // Fetch Trainer from database
         if (member.getTrainer() != null
@@ -109,12 +148,7 @@ public class MemberService {
     }
 
     private double membershipAmount(String membershipType) {
-        return switch (membershipType) {
-            case "Basic" -> 1200d;
-            case "Premium" -> 2500d;
-            case "VIP" -> 6000d;
-            default -> throw new IllegalArgumentException("Invalid membership plan");
-        };
+        return MembershipPlan.from(membershipType).getPrice();
     }
 
 
@@ -131,6 +165,7 @@ public class MemberService {
         existingMember.setMembershipType(member.getMembershipType());
         existingMember.setMembershipStartDate(member.getMembershipStartDate());
         existingMember.setMembershipEndDate(member.getMembershipEndDate());
+        normalizeMembership(existingMember);
 
 
         // Update Trainer
@@ -163,6 +198,7 @@ public class MemberService {
         }
 
         Member savedMember = memberRepository.save(existingMember);
+        synchronizePendingPayment(savedMember);
         System.out.printf("Member updated: memberId=%d, trainerId=%s, trainerName=%s%n",
                 savedMember.getId(),
                 savedMember.getTrainerId(),
@@ -214,7 +250,46 @@ public class MemberService {
 
     public MemberProfileResponse getMyProfileResponse(Integer userId) {
         Member member = memberRepository.findByUserId(userId);
+        if (member != null) {
+            normalizeMembership(member);
+            memberRepository.save(member);
+        }
         return member == null ? null : MemberProfileResponse.from(member);
+    }
+
+    public List<MembershipPlanResponse> getMembershipPlans() {
+        return Arrays.stream(MembershipPlan.values())
+                .map(MembershipPlanResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    private void normalizeMembership(Member member) {
+        if (member == null || member.getMembershipType() == null) {
+            throw new IllegalArgumentException("Membership plan is required");
+        }
+
+        MembershipPlan plan = MembershipPlan.from(member.getMembershipType());
+        member.setMembershipType(plan.name());
+
+        if (member.getMembershipStartDate() == null
+                || member.getMembershipStartDate().isBlank()) {
+            member.setMembershipEndDate(null);
+            throw new IllegalArgumentException("Membership start date is required");
+        }
+
+        LocalDate startDate = LocalDate.parse(member.getMembershipStartDate(), DATE_FORMAT);
+        member.setMembershipStartDate(startDate.format(DATE_FORMAT));
+        member.setMembershipEndDate(startDate.plusMonths(plan.getDurationMonths()).format(DATE_FORMAT));
+    }
+
+    private void synchronizePendingPayment(Member member) {
+        paymentRepository
+                .findFirstByMemberIdAndPaymentStatusInOrderByPaymentIdDesc(
+                        member.getId(), Arrays.asList("PENDING", "PROCESSING", "CREATED"))
+                .ifPresent(payment -> {
+                    payment.setAmount(membershipAmount(member.getMembershipType()));
+                    paymentRepository.save(payment);
+                });
     }
 
     @org.springframework.transaction.annotation.Transactional(readOnly = true)

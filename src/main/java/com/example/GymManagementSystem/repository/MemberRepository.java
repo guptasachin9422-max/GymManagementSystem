@@ -2,6 +2,7 @@ package com.example.GymManagementSystem.repository;
 
 import com.example.GymManagementSystem.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,5 +21,9 @@ public interface MemberRepository
     List<Member> findByMembershipType(String membershipType);
 
     List<Member> findByAge(Integer age);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Member m set m.trainer = null where m.trainer.trainerId = :trainerId")
+    int detachFromTrainer(@Param("trainerId") Long trainerId);
 
 }

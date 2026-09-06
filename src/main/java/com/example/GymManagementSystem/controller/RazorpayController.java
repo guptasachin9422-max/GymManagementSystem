@@ -1,4 +1,4 @@
-package com.example.GymManagementSystem.controller;
+﻿package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.dto.RazorpayOrderRequest;
 import com.example.GymManagementSystem.dto.RazorpayVerifyRequest;
@@ -21,9 +21,9 @@ public class RazorpayController {
 
     @PostMapping("/order")
     public ResponseEntity<?> createOrder(@RequestBody RazorpayOrderRequest request,
-                                          @RequestHeader("Authorization") String authHeader) {
+                                          @RequestHeader(value = "Authorization", required = false) String authHeader) {
         User user = userService.authenticate(authHeader);
-        if (user == null) return ResponseEntity.status(401).body("Invalid Token");
+        if (user == null) return ResponseEntity.status(401).body("Invalid or expired session");
         try {
             boolean owner = "OWNER".equalsIgnoreCase(user.getRole());
             return ResponseEntity.ok(razorpayService.createOrder(request, user.getId(), owner));
@@ -34,9 +34,9 @@ public class RazorpayController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPayment(@RequestBody RazorpayVerifyRequest request,
-                                            @RequestHeader("Authorization") String authHeader) {
+                                            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         User user = userService.authenticate(authHeader);
-        if (user == null) return ResponseEntity.status(401).body("Invalid Token");
+        if (user == null) return ResponseEntity.status(401).body("Invalid or expired session");
         try {
             return ResponseEntity.ok(razorpayService.verifyPayment(request));
         } catch (Exception e) {
@@ -46,9 +46,9 @@ public class RazorpayController {
 
     @PostMapping("/failed")
     public ResponseEntity<?> paymentFailed(@RequestBody RazorpayVerifyRequest request,
-                                           @RequestHeader("Authorization") String authHeader) {
+                                           @RequestHeader(value = "Authorization", required = false) String authHeader) {
         User user = userService.authenticate(authHeader);
-        if (user == null) return ResponseEntity.status(401).body("Invalid Token");
+        if (user == null) return ResponseEntity.status(401).body("Invalid or expired session");
         try {
             return ResponseEntity.ok(razorpayService.markPaymentFailed(request.getOrderId()));
         } catch (Exception e) {
@@ -56,3 +56,5 @@ public class RazorpayController {
         }
     }
 }
+
+

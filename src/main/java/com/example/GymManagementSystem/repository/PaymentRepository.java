@@ -4,7 +4,9 @@ import com.example.GymManagementSystem.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -21,5 +23,9 @@ Double getTotalRevenue();
 
     Optional<Payment> findFirstByMemberIdAndPaymentStatusInOrderByPaymentIdDesc(
             Integer memberId, List<String> statuses);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from Payment p where p.member.id = :memberId")
+    int deleteByMemberId(@Param("memberId") Integer memberId);
 }
 

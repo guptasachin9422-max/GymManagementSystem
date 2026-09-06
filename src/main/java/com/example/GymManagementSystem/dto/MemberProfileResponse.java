@@ -36,6 +36,16 @@ public class MemberProfileResponse {
         return response;
     }
 
+    public Integer getMembershipDurationMonths() {
+        return membershipType == null ? null
+                : com.example.GymManagementSystem.entity.MembershipPlan.from(membershipType).getDurationMonths();
+    }
+
+    public Double getMembershipPrice() {
+        return membershipType == null ? null
+                : com.example.GymManagementSystem.entity.MembershipPlan.from(membershipType).getPrice();
+    }
+
     public Integer getId() { return id; }
     public String getName() { return name; }
     public Integer getAge() { return age; }

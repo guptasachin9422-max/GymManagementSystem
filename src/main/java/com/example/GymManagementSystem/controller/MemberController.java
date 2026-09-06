@@ -1,4 +1,4 @@
-package com.example.GymManagementSystem.controller;
+﻿package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.Member;
 import com.example.GymManagementSystem.entity.User;
@@ -7,8 +7,9 @@ import com.example.GymManagementSystem.service.MemberService;
 import com.example.GymManagementSystem.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/members")
@@ -26,16 +27,16 @@ public class MemberController {
     @PostMapping
     public Object addMember(
             @RequestBody Member member,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         if (!user.getRole().equalsIgnoreCase("OWNER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
         return memberService.saveMember(member);
@@ -44,14 +45,19 @@ public class MemberController {
     // ==========================
     // Get All Members
     // ==========================
+    @GetMapping("/plans")
+    public Object getMembershipPlans() {
+        return memberService.getMembershipPlans();
+    }
+
     @GetMapping
     public Object getAllMembers(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         return memberService.getAllMembers();
@@ -63,12 +69,12 @@ public class MemberController {
     @GetMapping("/{id:\\d+}")
     public Object getMemberById(
             @PathVariable Integer id,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         return memberService.getMemberById(id);
@@ -76,13 +82,13 @@ public class MemberController {
 
     @GetMapping("/my-members")
     public Object myMembers(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         User user = userService.authenticate(authHeader);
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
         if (!user.getRole().equalsIgnoreCase("TRAINER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
         return memberService.getMyTrainerMembers(user.getId());
     }
@@ -94,16 +100,16 @@ public class MemberController {
     public Object updateMember(
             @PathVariable Integer id,
             @RequestBody Member member,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         if (!user.getRole().equalsIgnoreCase("OWNER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
         return memberService.updateMember(id, member);
@@ -115,16 +121,16 @@ public class MemberController {
     @DeleteMapping("/{id:\\d+}")
     public Object deleteMember(
             @PathVariable Integer id,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         if (!user.getRole().equalsIgnoreCase("OWNER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
         return memberService.deleteMember(id);
@@ -135,15 +141,18 @@ public class MemberController {
     // ==========================
     @GetMapping("/my-profile")
     public Object myProfile(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         MemberProfileResponse profile = memberService.getMyProfileResponse(user.getId());
         return profile;
     }
 }
+
+
+

@@ -3,6 +3,7 @@ package com.example.GymManagementSystem.service;
 import com.example.GymManagementSystem.dto.RazorpayOrderRequest;
 import com.example.GymManagementSystem.dto.RazorpayVerifyRequest;
 import com.example.GymManagementSystem.entity.Member;
+import com.example.GymManagementSystem.entity.MembershipPlan;
 import com.example.GymManagementSystem.entity.Payment;
 import com.example.GymManagementSystem.repository.MemberRepository;
 import com.example.GymManagementSystem.repository.PaymentRepository;
@@ -48,12 +49,8 @@ public class RazorpayService {
         }
         if (member == null) throw new IllegalArgumentException("Member not found");
 
-        double fixedAmount = switch (member.getMembershipType()) {
-            case "Basic" -> 1200d;
-            case "Premium" -> 2500d;
-            case "VIP" -> 6000d;
-            default -> throw new IllegalArgumentException("Invalid membership plan");
-        };
+        MembershipPlan plan = MembershipPlan.from(member.getMembershipType());
+        double fixedAmount = plan.getPrice();
         int amountInPaise = (int) Math.round(fixedAmount * 100);
 
         Optional<Payment> existingPayment =

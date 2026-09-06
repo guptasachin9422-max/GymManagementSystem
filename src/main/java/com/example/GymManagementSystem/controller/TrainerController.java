@@ -1,4 +1,4 @@
-package com.example.GymManagementSystem.controller;
+﻿package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.Trainer;
 import com.example.GymManagementSystem.entity.User;
@@ -9,6 +9,8 @@ import com.example.GymManagementSystem.service.TrainerService;
 import com.example.GymManagementSystem.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/trainers")
@@ -26,16 +28,16 @@ public class TrainerController {
     @PostMapping
     public Object addTrainer(
             @RequestBody Trainer trainer,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         if (!user.getRole().equalsIgnoreCase("OWNER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
         return trainerService.saveTrainer(trainer);
@@ -46,12 +48,12 @@ public class TrainerController {
     // ==========================
     @GetMapping
     public Object getAllTrainers(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         return trainerService.getAllTrainers();
@@ -63,12 +65,12 @@ public class TrainerController {
     @GetMapping("/{id:\\d+}")
     public Object getTrainerById(
             @PathVariable Long id,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         return trainerService.getTrainerById(id);
@@ -81,16 +83,16 @@ public class TrainerController {
     public Object updateTrainer(
             @PathVariable Long id,
             @RequestBody TrainerUpdateRequest request,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         if (!user.getRole().equalsIgnoreCase("OWNER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
         return trainerService.updateTrainer(id, request);
@@ -102,16 +104,16 @@ public class TrainerController {
     @DeleteMapping("/{id:\\d+}")
     public Object deleteTrainer(
             @PathVariable Long id,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         if (!user.getRole().equalsIgnoreCase("OWNER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
         return trainerService.deleteTrainer(id);
@@ -122,16 +124,16 @@ public class TrainerController {
     // ==========================
     @GetMapping("/my-profile")
     public Object myProfile(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
         if (!user.getRole().equalsIgnoreCase("TRAINER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
         return trainerService.getTrainerByUserId(user.getId());
@@ -140,16 +142,19 @@ public class TrainerController {
     @PutMapping("/my-profile")
     public Object updateMyProfile(
             @RequestBody TrainerUpdateRequest request,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user = userService.authenticate(authHeader);
         if (user == null) {
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
         if (!user.getRole().equalsIgnoreCase("TRAINER")) {
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
         return trainerService.updateMyProfile(user.getId(), request);
     }
 }
+
+
+

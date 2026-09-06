@@ -1,4 +1,4 @@
-package com.example.GymManagementSystem.controller;
+﻿package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.Payment;
 import com.example.GymManagementSystem.entity.User;
@@ -6,6 +6,8 @@ import com.example.GymManagementSystem.service.PaymentService;
 import com.example.GymManagementSystem.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import java.util.Map;
 
 @RestController
@@ -22,16 +24,16 @@ public class PaymentController {
     @PostMapping
     public Object addPayment(
             @RequestBody Payment payment,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user =
                 userService.authenticate(authHeader);
 
         if (user == null)
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
 
         if (!user.getRole().equalsIgnoreCase("OWNER"))
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
 
         return paymentService.savePayment(payment);
     }
@@ -39,13 +41,13 @@ public class PaymentController {
     // All Payments
     @GetMapping
     public Object getAllPayments(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user =
                 userService.authenticate(authHeader);
 
         if (user == null)
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
 
         return paymentService.getAllPayments();
     }
@@ -54,13 +56,13 @@ public class PaymentController {
     @GetMapping("/{id}")
     public Object getPaymentById(
             @PathVariable Integer id,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user =
                 userService.authenticate(authHeader);
 
         if (user == null)
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
 
         return paymentService.getPaymentById(id);
     }
@@ -70,16 +72,16 @@ public class PaymentController {
     public Object updatePayment(
             @PathVariable Integer id,
             @RequestBody Payment payment,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user =
                 userService.authenticate(authHeader);
 
         if (user == null)
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
 
         if (!user.getRole().equalsIgnoreCase("OWNER"))
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
 
         return paymentService.updatePayment(id, payment);
     }
@@ -88,16 +90,16 @@ public class PaymentController {
     @DeleteMapping("/{id}")
     public Object deletePayment(
             @PathVariable Integer id,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user =
                 userService.authenticate(authHeader);
 
         if (user == null)
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
 
         if (!user.getRole().equalsIgnoreCase("OWNER"))
-            return "Access Denied";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
 
         return paymentService.deletePayment(id);
     }
@@ -105,15 +107,18 @@ public class PaymentController {
     // My Payment
     @GetMapping("/my-payment")
     public Object myPayment(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         User user =
                 userService.authenticate(authHeader);
 
         if (user == null)
-            return "Invalid Token";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
 
         return paymentService.getPaymentByUserId(user.getId());
     }
 
 }
+
+
+

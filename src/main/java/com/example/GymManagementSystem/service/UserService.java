@@ -3,10 +3,12 @@ package com.example.GymManagementSystem.service;
 import com.example.GymManagementSystem.entity.User;
 import com.example.GymManagementSystem.entity.Member;
 import com.example.GymManagementSystem.entity.Trainer;
+import com.example.GymManagementSystem.entity.AuthSession;
 import com.example.GymManagementSystem.dto.UserManagementResponse;
 import com.example.GymManagementSystem.repository.MemberRepository;
 import com.example.GymManagementSystem.repository.TrainerRepository;
 import com.example.GymManagementSystem.repository.UserRepository;
+import com.example.GymManagementSystem.repository.PaymentRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +42,11 @@ public class UserService {
     @Autowired
     private TrainerRepository trainerRepository;
 
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private AuthSessionService authSessionService;
     // ===========================
     // Register
     // ===========================
@@ -101,9 +109,10 @@ public class UserService {
     // ===========================
     // Login
     // ===========================
+    @Transactional
     public ResponseEntity<?> login(User user) {
 
-        User dbUser = userRepository.findByEmail(user.getEmail())
+        User dbUser = userRepository.findByEmailForUpdate(user.getEmail())
                 .orElse(null);
 
         if (dbUser == null) {
@@ -116,8 +125,15 @@ public class UserService {
                     .body("Wrong Password");
         }
 
+        Instant createdAt = Instant.now();
+        if (authSessionService.hasActiveSession(dbUser.getId(), createdAt)) {
+            return ResponseEntity.status(409)
+                    .body("Your account is already logged in on another device. Please log out from that device first.");
+        }
+
         // Generate JWT Token
         String token = jwtService.generateToken(dbUser.getUsername());
+        AuthSession session = authSessionService.create(dbUser, token, createdAt);
 
         // Response
         Map<String, Object> response = new HashMap<>();
@@ -128,6 +144,7 @@ public class UserService {
         response.put("displayName", displayNameFor(dbUser));
         response.put("email", dbUser.getEmail());
         response.put("role", dbUser.getRole());
+        response.put("sessionExpiresAt", session.getExpiresAt().toString());
 
         return ResponseEntity.ok(response);
     }
@@ -165,6 +182,10 @@ public class UserService {
 
             // Validate JWT token only
             if (!jwtService.validateToken(token, username)) {
+                return null;
+            }
+
+            if (!authSessionService.isValid(token, user.getId(), Instant.now())) {
                 return null;
             }
 
@@ -210,7 +231,10 @@ public class UserService {
                 && !user.getDisplayName().isBlank()) {
             return user.getDisplayName();
         }
-        return user.getUsername();
+        if ("OWNER".equals(role)) return "Owner";
+        if ("TRAINER".equals(role)) return "Trainer";
+        if ("MEMBER".equals(role)) return "Member";
+        return "User";
     }
 
     private boolean looksGeneratedUsername(String value) {
@@ -239,8 +263,32 @@ public class UserService {
     // ===========================
     // Delete User
     // ===========================
+    @Transactional
     public String deleteUser(Integer id) {
-        userRepository.deleteById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Clean up either profile defensively, even if role/profile data is inconsistent.
+        Trainer trainer = trainerRepository.findByUser_Id(user.getId());
+        if (trainer != null) {
+            memberRepository.detachFromTrainer(trainer.getTrainerId());
+            memberRepository.flush();
+            trainerRepository.delete(trainer);
+            trainerRepository.flush();
+        }
+
+        Member member = memberRepository.findByUserId(user.getId());
+        if (member != null) {
+            // Payment.member is non-null, so remove child payments first.
+            paymentRepository.deleteByMemberId(member.getId());
+            paymentRepository.flush();
+            memberRepository.deleteById(member.getId());
+            memberRepository.flush();
+        }
+
+        authSessionService.deleteForUser(user.getId());
+        userRepository.delete(user);
+        userRepository.flush();
         return "User Deleted Successfully";
     }
 }
