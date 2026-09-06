@@ -1,4 +1,4 @@
-﻿package com.example.GymManagementSystem.controller;
+package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.Member;
 import com.example.GymManagementSystem.entity.User;
