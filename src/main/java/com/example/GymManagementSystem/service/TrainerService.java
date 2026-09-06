@@ -10,7 +10,6 @@ import com.example.GymManagementSystem.repository.MemberRepository;
 import com.example.GymManagementSystem.repository.TrainerRepository;
 import com.example.GymManagementSystem.repository.UserRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,14 +20,18 @@ import java.util.List;
 @Service
 public class TrainerService {
 
-    @Autowired
-    private MemberRepository memberRepository;
+    private final MemberRepository memberRepository;
+    private final TrainerRepository trainerRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private TrainerRepository trainerRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    public TrainerService(
+            MemberRepository memberRepository,
+            TrainerRepository trainerRepository,
+            UserRepository userRepository) {
+        this.memberRepository = memberRepository;
+        this.trainerRepository = trainerRepository;
+        this.userRepository = userRepository;
+    }
 
     // ==========================
     // Add Trainer
