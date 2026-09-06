@@ -1,4 +1,4 @@
-﻿package com.example.GymManagementSystem.controller;
+package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.User;
 import com.example.GymManagementSystem.dto.UpdateDisplayNameRequest;
