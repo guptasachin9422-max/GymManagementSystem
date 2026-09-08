@@ -1,14 +1,12 @@
 package com.example.GymManagementSystem.controller;
 
 import com.example.GymManagementSystem.entity.User;
-import com.example.GymManagementSystem.service.LogoutService;
 import com.example.GymManagementSystem.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import com.example.GymManagementSystem.service.AuthSessionService;
 
 @RestController
 @RequestMapping("/user")
@@ -16,12 +14,6 @@ public class LogoutController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private LogoutService logoutService;
-
-    @Autowired
-    private AuthSessionService authSessionService;
 
     // ===========================
     // Logout
@@ -41,13 +33,10 @@ public class LogoutController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
         }
 
-        // Extract token
         String token = authHeader.substring(7).trim();
-
-        // Blacklist token
-        logoutService.blacklistToken(token);
-        authSessionService.invalidate(token);
-
+        if (!userService.logout(user, token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired session");
+        }
         return ResponseEntity.ok("Logout Successful");
     }
 }

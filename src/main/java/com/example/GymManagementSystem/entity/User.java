@@ -19,6 +19,10 @@ public class User {
 
     private String displayName;
 
+    private String phone;
+
+    private Integer age;
+
     @Transient
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String trainerName;
@@ -38,6 +42,13 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(name = "active_session_token", length = 512)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String activeSessionToken;
+
+    @Column(name = "profile_image_url", columnDefinition = "TEXT")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String profileImageUrl;
 
     // Constructor
     public User() {
@@ -88,12 +99,44 @@ public class User {
         this.email = email;
     }
 
+    public String getActiveSessionToken() {
+        return activeSessionToken;
+    }
+
+    public void setActiveSessionToken(String activeSessionToken) {
+        this.activeSessionToken = activeSessionToken;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
     public String getDisplayName() {
         return displayName;
     }
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
     }
 
     public String getTrainerName() {

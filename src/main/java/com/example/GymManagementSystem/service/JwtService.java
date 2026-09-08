@@ -48,6 +48,15 @@ public class JwtService {
         return claims.getSubject();
     }
 
+    public Date extractExpiration(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+    }
+
     // Validate Token
     public boolean validateToken(String token, String username) {
 

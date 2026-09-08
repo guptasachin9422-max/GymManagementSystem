@@ -3,7 +3,6 @@ package com.example.GymManagementSystem.service;
 import com.example.GymManagementSystem.entity.User;
 import com.example.GymManagementSystem.entity.Member;
 import com.example.GymManagementSystem.entity.Trainer;
-import com.example.GymManagementSystem.entity.AuthSession;
 import com.example.GymManagementSystem.dto.UserManagementResponse;
 import com.example.GymManagementSystem.repository.MemberRepository;
 import com.example.GymManagementSystem.repository.TrainerRepository;
@@ -19,13 +18,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
-
-    @Autowired
-    private LogoutService logoutService;
 
     @Autowired
     private UserRepository userRepository;
@@ -45,8 +42,6 @@ public class UserService {
     @Autowired
     private PaymentRepository paymentRepository;
 
-    @Autowired
-    private AuthSessionService authSessionService;
     // ===========================
     // Register
     // ===========================
@@ -125,15 +120,14 @@ public class UserService {
                     .body("Wrong Password");
         }
 
-        Instant createdAt = Instant.now();
-        if (authSessionService.hasActiveSession(dbUser.getId(), createdAt)) {
+        if (hasActiveSession(dbUser)) {
             return ResponseEntity.status(409)
                     .body("Your account is already logged in on another device. Please log out from that device first.");
         }
 
-        // Generate JWT Token
         String token = jwtService.generateToken(dbUser.getUsername());
-        AuthSession session = authSessionService.create(dbUser, token, createdAt);
+        dbUser.setActiveSessionToken(token);
+        userRepository.saveAndFlush(dbUser);
 
         // Response
         Map<String, Object> response = new HashMap<>();
@@ -144,7 +138,7 @@ public class UserService {
         response.put("displayName", displayNameFor(dbUser));
         response.put("email", dbUser.getEmail());
         response.put("role", dbUser.getRole());
-        response.put("sessionExpiresAt", session.getExpiresAt().toString());
+        response.put("sessionExpiresAt", jwtService.extractExpiration(token).toInstant().toString());
 
         return ResponseEntity.ok(response);
     }
@@ -162,11 +156,6 @@ public class UserService {
 
         String token = authHeader.substring(7).trim();
 
-        // Check if token is logged out / blacklisted
-        if (logoutService.isTokenBlacklisted(token)) {
-            return null;
-        }
-
         try {
             String username = jwtService.extractUsername(token);
 
@@ -180,12 +169,11 @@ public class UserService {
                 return null;
             }
 
-            // Validate JWT token only
             if (!jwtService.validateToken(token, username)) {
                 return null;
             }
 
-            if (!authSessionService.isValid(token, user.getId(), Instant.now())) {
+            if (!Objects.equals(user.getActiveSessionToken(), token)) {
                 return null;
             }
 
@@ -194,6 +182,33 @@ public class UserService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    @Transactional
+    public boolean logout(User user, String token) {
+        if (user == null || !Objects.equals(user.getActiveSessionToken(), token)) {
+            return false;
+        }
+        user.setActiveSessionToken(null);
+        userRepository.saveAndFlush(user);
+        return true;
+    }
+
+    private boolean hasActiveSession(User user) {
+        String activeToken = user.getActiveSessionToken();
+        if (activeToken == null || activeToken.isBlank()) {
+            return false;
+        }
+        try {
+            if (jwtService.validateToken(activeToken, user.getUsername())) {
+                return true;
+            }
+        } catch (Exception ignored) {
+            // An expired or malformed token is stale and can be replaced.
+        }
+        user.setActiveSessionToken(null);
+        userRepository.saveAndFlush(user);
+        return false;
     }
 
 
@@ -286,7 +301,6 @@ public class UserService {
             memberRepository.flush();
         }
 
-        authSessionService.deleteForUser(user.getId());
         userRepository.delete(user);
         userRepository.flush();
         return "User Deleted Successfully";
