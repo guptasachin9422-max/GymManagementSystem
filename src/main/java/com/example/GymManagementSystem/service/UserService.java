@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,9 @@ public class UserService {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     // ===========================
     // Register
     // ===========================
@@ -61,6 +65,7 @@ public class UserService {
                     .body("Email Already Exists");
         }
 
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
 
         if ("TRAINER".equalsIgnoreCase(savedUser.getRole())
@@ -115,7 +120,7 @@ public class UserService {
                     .body("Email Not Found");
         }
 
-        if (!dbUser.getPassword().equals(user.getPassword())) {
+        if (!passwordMatchesAndUpgrade(dbUser, user.getPassword())) {
             return ResponseEntity.badRequest()
                     .body("Wrong Password");
         }
@@ -141,6 +146,28 @@ public class UserService {
         response.put("sessionExpiresAt", jwtService.extractExpiration(token).toInstant().toString());
 
         return ResponseEntity.ok(response);
+    }
+
+    private boolean passwordMatchesAndUpgrade(User user, String rawPassword) {
+        String storedPassword = user.getPassword();
+        if (storedPassword == null || rawPassword == null) {
+            return false;
+        }
+
+        if (storedPassword.startsWith("$2a$")
+                || storedPassword.startsWith("$2b$")
+                || storedPassword.startsWith("$2y$")) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+
+        // Preserve compatibility with existing installations and upgrade old
+        // plaintext records as soon as their owner/user logs in.
+        if (storedPassword.equals(rawPassword)) {
+            user.setPassword(passwordEncoder.encode(rawPassword));
+            userRepository.save(user);
+            return true;
+        }
+        return false;
     }
 
 

@@ -24,6 +24,11 @@
 <groupId>org.springframework.boot</groupId>
 <artifactId>spring-boot-starter-web</artifactId>
 </dependency>
+<!-- Password hashing for application-managed user accounts -->
+<dependency>
+<groupId>org.springframework.security</groupId>
+<artifactId>spring-security-crypto</artifactId>
+</dependency>
 <!--  Spring Boot JPA  -->
 <dependency>
 <groupId>org.springframework.boot</groupId>

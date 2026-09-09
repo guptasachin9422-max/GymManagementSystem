@@ -21,7 +21,18 @@ public class UserController {
     // ==========================
     @PostMapping("/register")
     public ResponseEntity<?> register(
-            @RequestBody User user) {
+            @RequestBody User user,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        User requester = userService.authenticate(authHeader);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid or expired session");
+        }
+        if (!"OWNER".equalsIgnoreCase(requester.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Only the owner can create user accounts");
+        }
 
         return userService.register(user);
     }

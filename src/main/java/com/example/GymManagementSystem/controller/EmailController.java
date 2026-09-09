@@ -4,6 +4,7 @@ import com.example.GymManagementSystem.entity.User;
 import com.example.GymManagementSystem.repository.UserRepository;
 import com.example.GymManagementSystem.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,9 @@ public class EmailController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     // Email -> OTP
     private final Map<String, String> otpStore = new HashMap<>();
@@ -104,7 +108,7 @@ public class EmailController {
 
        User user = userOpt.get();
 
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
 
         userRepository.save(user);
 
