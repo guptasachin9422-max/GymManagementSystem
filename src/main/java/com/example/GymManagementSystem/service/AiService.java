@@ -14,6 +14,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -62,8 +64,8 @@ public class AiService {
             MemberRepository memberRepository,
             TrainerRepository trainerRepository,
             ObjectMapper objectMapper,
-            @Value("${ai.openai.api-key:}") String apiKey,
-            @Value("${ai.openai.model:gpt-4o-mini}") String model) {
+            @Value("${ai.gemini.api-key:}") String apiKey,
+            @Value("${ai.gemini.model:gemini-3.1-flash-lite}") String model) {
         this.memberRepository = memberRepository;
         this.trainerRepository = trainerRepository;
         this.objectMapper = objectMapper;
@@ -76,41 +78,64 @@ public class AiService {
 
     public String chat(User user, String message) {
         if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("AI assistant is not configured. Set OPENAI_API_KEY on the backend.");
+            throw new IllegalStateException("AI assistant is not configured. Set GEMINI_API_KEY on the backend.");
         }
 
         try {
+            String combinedInstruction = SYSTEM_PROMPT + "\n\n" + accountContext(user);
             Map<String, Object> payload = Map.of(
-                    "model", model,
-                    "temperature", 0.4,
-                    "max_tokens", 700,
-                    "messages", List.of(
-                            Map.of("role", "system", "content", SYSTEM_PROMPT),
-                            Map.of("role", "system", "content", accountContext(user)),
-                            Map.of("role", "user", "content", message.trim())
+                    "systemInstruction", Map.of(
+                            "parts", List.of(Map.of("text", combinedInstruction))
+                    ),
+                    "contents", List.of(Map.of(
+                            "role", "user",
+                            "parts", List.of(Map.of("text", message.trim()))
+                    )),
+                    "generationConfig", Map.of(
+                            "temperature", 0.4,
+                            "maxOutputTokens", 700
                     )
             );
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.openai.com/v1/chat/completions"))
+                    .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/"
+                            + URLEncoder.encode(model, StandardCharsets.UTF_8)
+                            + ":generateContent"))
                     .timeout(Duration.ofSeconds(45))
-                    .header("Authorization", "Bearer " + apiKey)
+                    .header("x-goog-api-key", apiKey.trim())
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            JsonNode body = objectMapper.readTree(response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalStateException("The AI provider is temporarily unavailable.");
+                String reason = switch (response.statusCode()) {
+                    case 400 -> "Gemini rejected the request. Check the backend API key and model configuration.";
+                    case 401, 403 -> "Gemini denied access. Check GEMINI_API_KEY and its API permissions.";
+                    case 404 -> "The configured Gemini model is unavailable. Check GEMINI_MODEL on the backend.";
+                    case 429 -> "Gemini quota or rate limit reached. Check your API quota and billing, then retry.";
+                    case 503 -> "Gemini is experiencing high demand. Please retry shortly.";
+                    default -> "Gemini could not complete the request.";
+                };
+                throw new IllegalStateException(reason + " (HTTP " + response.statusCode() + ")");
             }
-            String answer = body.path("choices").path(0).path("message").path("content").asText("");
+            JsonNode body = objectMapper.readTree(response.body());
+            StringBuilder answerBuilder = new StringBuilder();
+            for (JsonNode part : body.path("candidates").path(0).path("content").path("parts")) {
+                if (part.hasNonNull("text") && !part.path("thought").asBoolean(false)) {
+                    answerBuilder.append(part.path("text").asText());
+                }
+            }
+            String answer = answerBuilder.toString();
             if (answer.isBlank()) {
                 throw new IllegalStateException("The AI provider returned an empty response.");
             }
             return answer.trim();
         } catch (IllegalStateException exception) {
             throw exception;
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("The AI request was interrupted. Please try again.", exception);
         } catch (Exception exception) {
             throw new IllegalStateException("The AI assistant is temporarily unavailable. Please try again.", exception);
         }
