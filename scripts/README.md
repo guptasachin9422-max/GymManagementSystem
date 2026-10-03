@@ -51,3 +51,23 @@ powershell -NoProfile -File .\scripts\Test-GeminiLauncher.ps1
 ```
 
 Tests replace the HTTP call and hidden-input prompt with local fixtures. They cover two successful calls, first/second-call 401, permission/quota/model/provider errors, empty output, environment restoration, and suppressed sensitive error output. They do **not** prove that a real key is valid or that the database/backend can start.
+
+## Hosted chat: temporary Gemini overload
+
+`Gemini is experiencing high demand ... (HTTP 503)` is the backend's message for an HTTP 503 returned by the Gemini endpoint. It differs from a Railway application-startup 503 and from a Gemini credential rejection (401/403). Key rotation is not a remedy for overload.
+
+The chat backend now makes at most **three attempts** for Gemini HTTP 500/502/503/504, with roughly 1-second then 2-second backoff plus a small random delay. All attempts share the original **45-second total HTTP time budget**. A valid `Retry-After` is respected; if it asks for more than 5 seconds or exceeds the remaining budget, the backend stops rather than retrying too early or waiting indefinitely.
+
+Authentication, invalid-model, and quota responses are not automatically retried. Ambiguous network failures also are not replayed. The model, API key, and account context remain unchanged. Retry logs contain only status codes, attempt counts, and delay times, not credentials, prompts, or provider response bodies. The local preflight launcher above intentionally still reports failures immediately so configuration problems remain visible.
+
+Persistent provider overload can still fail after these bounded attempts. Wait briefly and try again; check [Gemini service status](https://aistudio.google.com/status) if failures persist. A different model may help only if it is available to your project; set `GEMINI_MODEL` in Railway's **backend** service and deploy the variable change. Do not change providers or send member data to a new service without reviewing that decision.
+
+For the code fix to affect Railway, commit/push the backend changes and deploy that revision. A local edit alone does not update a running deployment.
+
+Run the focused Java regression tests from the backend folder:
+
+```powershell
+.\mvnw.cmd "-Dtest=AiServiceTest,GeminiRequestExecutorTest" test
+```
+
+These tests mock Gemini and repositories; they require no real API key or database. They verify recovery after a 503, capped attempts/delays, unchanged request credentials/payload, the total deadline, `Retry-After`, interruption, and non-retryable errors. They do not verify a live Railway deployment.

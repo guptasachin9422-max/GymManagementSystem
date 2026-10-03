@@ -107,7 +107,7 @@ public class AiService {
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = GeminiRequestExecutor.send(httpClient, request);
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 String reason = switch (response.statusCode()) {
                     case 400 -> "Gemini rejected the request. Check the backend API key and model configuration.";
